@@ -19,7 +19,7 @@ The visual design of both directions is approved. Restyling, retheming or recomp
 
 ## Invariants
 
-- **Three colors.** Every surface reads `--c-ground`, `--c-ink` and `--c-signal`. Picker slider tracks are the only place other colors appear.
+- **Three colors.** Every surface reads `--c-ground`, `--c-ink` and `--c-signal`. Other colors appear only where a color is being previewed: picker slider tracks, the picker's candidate swatch, and saved-theme chips.
 - **Gates.** Every color change goes through `TokenStore` (`src/tokens.ts`), which refuses any trio that fails a required rule in `src/gates.ts`. Required: ink on ground 4.5:1, signal on ground 4.5:1. Advisory: signal on ink 3:1, because active lines are also cased and listed in the readout.
 - **Layout mode** is set by `<app-dock>` on `.app[data-layout]` as `sheet`, `tabs` or `split`, from the app's width. CSS and ARIA both key off it. Breakpoints live in `src/app-dock.ts`.
 - **CSS cascade.** Shared sheets in `src/map-styles.ts` and `src/shell-styles.ts` sit in `@layer base, shell`. Direction styles in each page are unlayered, so they always win. A shared rule that must beat a direction rule (for example hiding something) needs `!important`.

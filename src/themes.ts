@@ -50,6 +50,8 @@ export class ThemeStore extends EventTarget {
   readonly #store: TokenStore;
   readonly #key: string;
   readonly #slots: Slot[] = Array.from({ length: SLOT_COUNT }, () => null);
+  /** Last slot applied or saved. Breaks ties when two slots hold the same colors. */
+  #last = -1;
 
   constructor(store: TokenStore, id: string) {
     super();
@@ -70,10 +72,11 @@ export class ThemeStore extends EventTarget {
     return [...this.#slots];
   }
 
-  /** Index of the slot matching the current colors, or -1. */
+  /** Index of the slot matching the current colors, or -1. Prefers the last slot used. */
   active(): number {
     const now = this.#store.trio();
-    return this.#slots.findIndex((s) => s !== null && sameTrio(s, now));
+    const matches = (s: Slot): boolean => s !== null && sameTrio(s, now);
+    return matches(this.#slots[this.#last] ?? null) ? this.#last : this.#slots.findIndex(matches);
   }
 
   /** The active slot's own name for a color, if it has one. */
@@ -93,6 +96,7 @@ export class ThemeStore extends EventTarget {
       if (kept && prev[role] === trio[role]) names[role] = kept;
     }
     this.#slots[i] = { ...trio, name: prev?.name ?? defaultName(i), names };
+    this.#last = i;
     this.#persist();
   }
 
@@ -114,7 +118,10 @@ export class ThemeStore extends EventTarget {
   apply(i: number): SetResult {
     const slot = this.#slots[i];
     if (!slot) return { ok: false, error: `Theme ${i + 1} is empty.` };
-    return this.#store.setColors(slot, 'theme');
+    this.#last = i;
+    const result = this.#store.setColors(slot, 'theme');
+    if (result.ok && !result.changed) this.#emit();
+    return result;
   }
 
   /** Applies the next saved theme after the active one. Returns its index, or -1 if none are saved. */

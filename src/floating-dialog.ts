@@ -55,7 +55,10 @@ export class FloatingDialog {
 
   close(): void {
     if (!this.#dialog.open) return;
+    // Hand focus back only if it was in the dialog; otherwise the user has already moved on.
+    const hadFocus = this.#dialog.contains(document.activeElement);
     this.#dialog.close();
+    if (!hadFocus) return;
     const back = this.#returnTo && this.#returnTo.isConnected ? this.#returnTo : this.#openers[0];
     back?.focus();
   }

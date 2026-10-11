@@ -3,7 +3,7 @@
  * The full manager can name a theme and its colors. Color names left blank use automatic names.
  */
 import { colorName } from './color-names.js';
-import { h, type Announce } from './dom.js';
+import { h, rafBatch, type Announce } from './dom.js';
 import type { ColorRole, Trio } from './gates.js';
 import { NAME_MAX, SLOT_COUNT, type ColorNames, type ThemeSlot, type ThemeStore } from './themes.js';
 
@@ -32,10 +32,11 @@ export class ThemeSlots extends HTMLElement {
   #announce: Announce = () => undefined;
   #editing = -1;
   #draft: Draft = { name: '', names: {} };
+  readonly #schedule = rafBatch(() => this.#render());
 
   set themes(themes: ThemeStore) {
     this.#themes = themes;
-    themes.onChange(() => this.#render());
+    themes.onChange(() => this.#schedule());
     this.#render();
   }
   set announce(fn: Announce) {

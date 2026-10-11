@@ -5,7 +5,7 @@
  */
 import { hexToHsl, hslToHex, type HslColor } from './color.js';
 import { h } from './dom.js';
-import { CHANNEL_MAX, channelPassMap, describeFailure, failures, rangeText, type ColorRole, type HslChannel } from './gates.js';
+import { CHANNEL_MAX, channelPassMap, failures, rangeText, type ColorRole, type HslChannel } from './gates.js';
 import type { TokenStore } from './tokens.js';
 
 const CHANNELS: readonly { readonly key: HslChannel; readonly label: string; readonly unit: string }[] = [
@@ -139,11 +139,12 @@ export class ColorEditor extends HTMLElement {
     this.#snap.hidden = !result.suggestion;
     this.#snap.textContent = `Use nearest passing ${this.#snapValue}`;
     const why = failures({ ...st.trio(), [this.#role]: hex })[0];
-    this.#setStatus(why ? `${hex} not applied: ${describeFailure(why)}.` : result.error, 'error');
+    // Rule-level text stays the same through a drag, so the live region speaks once, not on every step.
+    this.#setStatus(why ? `Not applied: ${why.rule.fg} on ${why.rule.bg} needs ${why.rule.min}:1.` : result.error, 'error');
   }
 
   #setStatus(text: string, state: 'ok' | 'error'): void {
-    this.#status.textContent = text;
+    if (this.#status.textContent !== text) this.#status.textContent = text;
     this.#status.dataset['state'] = state;
     this.classList.toggle('is-blocked', state === 'error');
   }

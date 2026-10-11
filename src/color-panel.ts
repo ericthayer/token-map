@@ -1,6 +1,6 @@
 /** <color-panel>: the three color rows, one inline editor, and the theme manager. */
 import { ColorEditor } from './color-editor.js';
-import { h, type Announce } from './dom.js';
+import { h, rafBatch, type Announce } from './dom.js';
 import { evaluate, ROLES, type ColorRole } from './gates.js';
 import { ThemeSlots } from './theme-slots.js';
 import type { ThemeStore } from './themes.js';
@@ -18,12 +18,13 @@ export class ColorPanel extends HTMLElement {
   readonly #rows = new Map<ColorRole, RowRefs>();
   readonly #editor = new ColorEditor();
   readonly #slots = new ThemeSlots();
+  readonly #schedule = rafBatch(() => this.#update());
 
   set store(store: TokenStore) {
     this.#store = store;
     this.#editor.store = store;
     store.onChange((c) => {
-      if (c.name === null || c.name.startsWith('color.')) this.#update();
+      if (c.name === null || c.name.startsWith('color.')) this.#schedule();
     });
     this.#update();
   }

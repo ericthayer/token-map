@@ -233,7 +233,7 @@ export class TransitMap extends HTMLElement {
     return this.#store ? Math.min(1, MIN_LABEL_PX / this.#store.num('label.size')) : 1;
   }
 
-  /** Sizes the SVG for the current zoom. Keeps the anchor point (default: viewport center) still. */
+  /** Sizes the SVG for the current zoom. Keeps the anchor point (default: viewport center) still, net of the centering inset. */
   #applyZoom(anchor: { x: number; y: number } | null): void {
     const st = this.#store;
     if (!st) return;
@@ -247,14 +247,15 @@ export class TransitMap extends HTMLElement {
     const next = Math.min(this.#fit ? FIT_MAX : MAX_SCALE, Math.max(min, this.#fit ? fit : this.#manual));
     const prev = this.#scale;
     const a = anchor ?? { x: vw / 2, y: vh / 2 };
-    const fx = (sc.scrollLeft + a.x) / prev;
-    const fy = (sc.scrollTop + a.y) / prev;
+    const inset = (view: number, size: number, k: number): number => Math.max(0, (view - size * k) / 2);
+    const fx = (sc.scrollLeft + a.x - inset(vw, geo.width, prev)) / prev;
+    const fy = (sc.scrollTop + a.y - inset(vh, geo.height, prev)) / prev;
     this.#scale = next;
     this.#svg.setAttribute('width', String(Math.round(geo.width * next)));
     this.#svg.setAttribute('height', String(Math.round(geo.height * next)));
     if (prev !== next) {
-      sc.scrollLeft = fx * next - a.x;
-      sc.scrollTop = fy * next - a.y;
+      sc.scrollLeft = fx * next + inset(vw, geo.width, next) - a.x;
+      sc.scrollTop = fy * next + inset(vh, geo.height, next) - a.y;
       this.#schedule();
     }
     sc.classList.toggle('can-pan', geo.width * next > vw + 1 || geo.height * next > vh + 1);

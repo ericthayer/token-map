@@ -230,6 +230,7 @@ dialog.float { border: var(--bezel) solid var(--c-ink); background: var(--c-grou
 
 /* Focus for reset buttons, declared last so it wins over all: unset */
 button:focus-visible, [role="tab"]:focus-visible, summary:focus-visible { outline: 3px solid var(--c-signal); outline-offset: 3px; }
+.cmdbar button:focus-visible { outline: 3px solid var(--c-signal); outline-offset: 3px; }
 </style>
 
 <div class="app">
@@ -329,7 +330,7 @@ button:focus-visible, [role="tab"]:focus-visible, summary:focus-visible { outlin
     <input id="cmd" name="cmd" list="token-names" spellcheck="false" placeholder="stroke.line 5" aria-describedby="cmd-status">
     <button type="button" id="help-btn" class="icon-btn" aria-label="Help and keyboard shortcuts" aria-controls="help" aria-expanded="false" aria-keyshortcuts="?" title="Help (?)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.3-1.5 2.4M12 18v.5"/></svg></button>
     <button type="submit" class="apply-btn">Apply</button>
-    <p id="cmd-status" class="cmd-status" aria-live="polite"></p>
+    <p id="cmd-status" class="cmd-status"></p>
     <datalist id="token-names"></datalist>
   </form>
 </div>

@@ -69,8 +69,9 @@ dialog.float[open] { display: grid; }
 
 /* Touch: every target at least 44px, steppers always visible */
 @media (pointer: coarse) {
-  .rack-step, .zoom-btn, .zoom-fit, .icon-btn, .slot, .theme-act, .pin-btn, .dock-tabs [role="tab"], .dock-toggle { min-width: 44px; min-height: 44px; }
-  .legend-btn { min-height: 44px; }
+  /* !important: each direction resets these controls with unlayered all: unset, which would otherwise win. */
+  .rack-step, .zoom-btn, .zoom-fit, .icon-btn, .tool-btn, .slot, .theme-act, .pin-btn, .dock-tabs [role="tab"], .dock-toggle { min-width: 44px !important; min-height: 44px !important; }
+  .legend-btn { min-height: 44px !important; }
   .rack-steps { visibility: visible !important; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

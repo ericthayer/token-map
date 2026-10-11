@@ -33,7 +33,7 @@ token-rack, contrast-panel, token-output, color-panel, theme-slots, map-legend, 
 .swatch-ink { background: var(--c-ink); }
 .swatch-signal { background: var(--c-signal); }
 
-/* Saved-theme chips: the one place a non-current color can appear */
+/* Saved-theme chips: preview colors that are not current, like the picker swatch and tracks */
 .tri { display: inline-flex; flex: none; border: 1.5px solid var(--c-ink); }
 .tri > span { width: 0.55rem; height: 1.1rem; background: var(--sw); }
 .tri-empty { width: calc(1.65rem + 3px); height: calc(1.1rem + 3px); border-style: dashed; }

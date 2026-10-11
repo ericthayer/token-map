@@ -31,10 +31,7 @@ function unknown(store: TokenStore, name: string): string {
   return `No token or command named ${name}. ${guess ? `Try ${guess}.` : 'Press ? for the full list.'}`;
 }
 
-const slotOf = (arg: string): number => {
-  const n = Number.parseInt(arg, 10);
-  return n >= 1 && n <= 3 ? n - 1 : -1;
-};
+const slotOf = (arg: string): number => (/^[1-3]$/.test(arg) ? Number(arg) - 1 : -1);
 
 export function runCommand(raw: string, t: CommandTargets): CommandResult {
   const { store, themes } = t;
@@ -50,8 +47,12 @@ export function runCommand(raw: string, t: CommandTargets): CommandResult {
       }
       const def = store.def(arg);
       if (!def) return { ok: false, text: unknown(store, arg) };
-      store.reset(arg);
-      return { ok: true, text: `${arg} reset to ${formatValue(def, store.get(arg))}.` };
+      const changed = store.reset(arg);
+      const value = formatValue(def, store.get(arg));
+      if (!changed.length) return { ok: true, text: `${arg} is already at its default, ${value}.` };
+      const others = changed.filter((n) => n !== arg);
+      const tail = others.length ? ` ${others.join(' and ')} also reset, so the colors pass the gates.` : '';
+      return { ok: true, text: `${arg} reset to ${value}.${tail}` };
     }
     case 'undo':
       return store.undo() ? { ok: true, text: 'Undone.' } : { ok: false, text: 'Nothing to undo.' };
