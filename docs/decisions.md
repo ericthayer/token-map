@@ -17,7 +17,7 @@ Why the system is shaped the way it is. Newest at the bottom of each section.
 | signal on ink | 3:1, advisory | Active lines also get a ground-colored casing and are listed in the readout, so color is not the only cue. Requiring it would push B's amber toward lemon yellow |
 
 - The gate check lives in one place, `TokenStore`. The picker, command line, themes and stored values all go through it, so no path can bypass it.
-- Refusals always offer the nearest passing color (lightness first, then saturation). A refusal with no way forward is a dead end.
+- Refusals always offer the nearest passing color (lightness first, then saturation). A refusal with no way forward is a dead end. A refused `colors` command or theme offers it for the first failing role.
 - `colors #g #i #s` sets all three colors at once. Without it, switching from dark to light one color at a time can get stuck on a failing in-between state.
 - A's default red moved from `#D7261E` (4.36:1) to `#D3251D` (4.51:1) when the gates were introduced.
 
@@ -29,7 +29,7 @@ Why the system is shaped the way it is. Newest at the bottom of each section.
   - `tabs`, from 760 to 1679px: side dock with Tokens and Output tabs.
   - `split`, 1680px and wider: Tokens and Output side by side.
 - **Map info on phones.** Legend, station readout, stats and keys move into a tab in the sheet. A floating action button was rejected because it would add a third navigation pattern alongside the tabs and the sheet.
-- **Map scale.** The map fits its viewport. The minimum scale keeps labels at 10px or larger; past that the map pans. Zoom goes up to 300% manually and 250% when fitting.
+- **Map scale.** The map fits its viewport. The minimum scale keeps labels at 10px or larger; past that the map pans. Zoom goes up to 300% manually and 250% when fitting. `label.size` starts at 10, so 100% zoom can never draw labels below the floor.
 - **Type.** Root font size is fluid with `clamp()` on viewport width, and all sizes are in rem. A is about 15px at 1440 wide, B about 13px.
 
 ## Color tools

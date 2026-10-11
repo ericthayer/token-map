@@ -11,12 +11,16 @@ export type SetResult =
   | { readonly ok: false; readonly error: string; readonly suggestion?: string };
 export type ChangeSource = 'edit' | 'undo' | 'redo' | 'reset' | 'theme';
 export interface TokenChange {
+  /** The one token changed, or null when several may have changed. */
   readonly name: string | null;
   readonly source: ChangeSource;
+  /** Tokens the user changed on purpose, for highlighting. Empty for undo, redo and a full reset. */
+  readonly targets: readonly string[];
 }
 type Snapshot = ReadonlyMap<string, TokenValue>;
 type Coerced = { readonly ok: true; readonly value: TokenValue } | { readonly ok: false; readonly error: string };
 
+const ROLES: readonly ColorRole[] = ['ground', 'ink', 'signal'];
 const HISTORY_LIMIT = 80;
 const COALESCE_MS = 700;
 const decimals = (step: number): number => String(step).split('.')[1]?.length ?? 0;
@@ -122,7 +126,7 @@ export class TokenStore extends EventTarget {
     if (changed) {
       this.#record(name);
       this.#values.set(name, result.value);
-      this.#commit(name, 'edit');
+      this.#commit(name, 'edit', [name]);
     }
     return { ok: true, value: result.value, changed };
   }
@@ -130,17 +134,25 @@ export class TokenStore extends EventTarget {
   /** Sets all three colors at once, so a dark-to-light switch never deadlocks on an intermediate state. */
   setColors(trio: Trio, source: ChangeSource = 'theme'): SetResult {
     const next: Record<ColorRole, string> = { ground: '', ink: '', signal: '' };
-    for (const role of ['ground', 'ink', 'signal'] as const) {
+    for (const role of ROLES) {
       const hex = normalizeHex(trio[role]);
       if (!hex) return { ok: false, error: `${trio[role]} is not a hex color.` };
       next[role] = hex;
     }
     const bad = failures(next);
-    if (bad[0]) return { ok: false, error: `Blocked: ${describeFailure(bad[0])}.` };
+    if (bad[0]) {
+      const role = bad[0].rule.fg;
+      const suggestion = nearestPassing(role, next[role], next);
+      const tail = suggestion ? ` Nearest passing ${role}: ${suggestion}.` : '';
+      return { ok: false, error: `Blocked: ${describeFailure(bad[0])}.${tail}`, ...(suggestion ? { suggestion } : {}) };
+    }
+    const value = `${next.ground} ${next.ink} ${next.signal}`;
+    const targets = ROLES.filter((r) => this.#values.get(`color.${r}`) !== next[r]).map((r) => `color.${r}`);
+    if (!targets.length) return { ok: true, value, changed: false };
     this.#record(null);
-    for (const role of ['ground', 'ink', 'signal'] as const) this.#values.set(`color.${role}`, next[role]);
-    this.#commit('color.ground', source);
-    return { ok: true, value: `${next.ground} ${next.ink} ${next.signal}`, changed: true };
+    for (const role of ROLES) this.#values.set(`color.${role}`, next[role]);
+    this.#commit(null, source, targets);
+    return { ok: true, value, changed: true };
   }
 
   step(name: string, dir: 1 | -1, big = false): SetResult {
@@ -160,14 +172,24 @@ export class TokenStore extends EventTarget {
     }
   }
 
-  reset(name?: string): void {
-    this.#record(null);
+  /**
+   * Resets one token, or all of them. If one color's default fails against the other two,
+   * all three colors reset. Returns the tokens that changed.
+   */
+  reset(name?: string): string[] {
+    const next = new Map(this.#values);
     for (const n of name === undefined ? [...this.#defs.keys()] : [name]) {
       const d = this.#defaults.get(n);
-      if (d !== undefined) this.#values.set(n, d);
+      if (d !== undefined) next.set(n, d);
     }
-    if (failures(this.trio()).length) for (const r of ['ground', 'ink', 'signal']) this.#values.set(`color.${r}`, this.#defaults.get(`color.${r}`) ?? '');
-    this.#commit(name ?? null, 'reset');
+    if (failures(this.#trioOf(next)).length) for (const r of ROLES) next.set(`color.${r}`, this.#defaults.get(`color.${r}`) ?? '');
+    const changed = [...next].filter(([k, v]) => this.#values.get(k) !== v);
+    if (!changed.length) return [];
+    this.#record(null);
+    for (const [k, v] of changed) this.#values.set(k, v);
+    const names = changed.map(([k]) => k);
+    this.#commit(name ?? null, 'reset', name === undefined ? [] : names);
+    return names;
   }
 
   undo(): boolean {
@@ -191,7 +213,7 @@ export class TokenStore extends EventTarget {
     to.push(new Map(this.#values));
     for (const [k, v] of snap) this.#values.set(k, v);
     this.#lastEdit = { name: '', at: 0 };
-    this.#commit(null, source);
+    this.#commit(null, source, []);
     return true;
   }
 
@@ -211,13 +233,13 @@ export class TokenStore extends EventTarget {
     return { ground: get('ground'), ink: get('ink'), signal: get('signal') };
   }
 
-  #commit(name: string | null, source: ChangeSource): void {
+  #commit(name: string | null, source: ChangeSource, targets: readonly string[]): void {
     try {
       localStorage.setItem(this.#storageKey, JSON.stringify(Object.fromEntries(this.#values)));
     } catch {
       /* Storage is optional. */
     }
-    this.dispatchEvent(new CustomEvent<TokenChange>('change', { detail: { name, source } }));
+    this.dispatchEvent(new CustomEvent<TokenChange>('change', { detail: { name, source, targets } }));
   }
 
   #restore(): void {
@@ -232,7 +254,7 @@ export class TokenStore extends EventTarget {
         if (result.ok) this.#values.set(name, result.value);
       }
       if (failures(this.trio()).length) {
-        for (const r of ['ground', 'ink', 'signal']) this.#values.set(`color.${r}`, this.#defaults.get(`color.${r}`) ?? '');
+        for (const r of ROLES) this.#values.set(`color.${r}`, this.#defaults.get(`color.${r}`) ?? '');
       }
     } catch {
       /* Storage is optional. */

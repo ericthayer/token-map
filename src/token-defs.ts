@@ -49,7 +49,7 @@ export const TOKEN_DEFS: readonly TokenDef[] = [
   { kind: 'enum', name: 'route.join', group: 'route', options: ['miter', 'round', 'bevel'], value: 'round', description: 'How lines turn a corner.' },
   { kind: 'enum', name: 'station.shape', group: 'station', options: ['tick', 'ring', 'block'], value: 'tick', description: 'Marker for single-line stations. Interchanges get a larger outlined marker.' },
   { kind: 'number', name: 'station.size', group: 'station', unit: 'px', min: 3, max: 14, step: 1, value: 6, description: 'Marker radius.' },
-  { kind: 'number', name: 'label.size', group: 'label', unit: 'px', min: 9, max: 20, step: 1, value: 12, description: 'Station name size at 100% zoom. The map never zooms out past 10px.' },
+  { kind: 'number', name: 'label.size', group: 'label', unit: 'px', min: 10, max: 20, step: 1, value: 12, description: 'Station name size at 100% zoom. The map never zooms out past 10px.' },
   { kind: 'number', name: 'label.tracking', group: 'label', unit: 'em', min: 0, max: 0.2, step: 0.01, value: 0.02, description: 'Letter spacing for station names.' },
   { kind: 'enum', name: 'label.case', group: 'label', options: ['mixed', 'upper'], value: 'mixed', description: 'Station names as written, or in capitals.' },
   { kind: 'number', name: 'label.offset', group: 'label', unit: 'px', min: 2, max: 24, step: 1, value: 6, description: 'Gap between a marker and its name.' },

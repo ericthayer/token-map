@@ -1,15 +1,16 @@
 /** <contrast-panel>: live gate status for the three color pairs. Required gates can never show a failure. */
-import { h } from './dom.js';
+import { h, rafBatch } from './dom.js';
 import { evaluate } from './gates.js';
 import type { TokenStore } from './tokens.js';
 
 export class ContrastPanel extends HTMLElement {
   #store: TokenStore | null = null;
+  readonly #schedule = rafBatch(() => this.#render());
 
   set store(store: TokenStore) {
     this.#store = store;
     store.onChange((c) => {
-      if (c.name === null || c.name.startsWith('color.')) this.#render();
+      if (c.name === null || c.name.startsWith('color.')) this.#schedule();
     });
     this.#render();
   }

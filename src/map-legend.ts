@@ -1,5 +1,5 @@
 /** <map-legend>: line key that doubles as an isolation toolbar. One tab stop, arrow keys move between lines. */
-import { h, s } from './dom.js';
+import { h, rafBatch, s } from './dom.js';
 import { strokeFor } from './geometry.js';
 import { LINES } from './network.js';
 import type { TokenStore } from './tokens.js';
@@ -15,15 +15,16 @@ export class MapLegend extends HTMLElement {
   #map: TransitMap | null = null;
   #index = 0;
   readonly #items: ItemRefs[] = [];
+  readonly #schedule = rafBatch(() => this.#update());
 
   set store(store: TokenStore) {
     this.#store = store;
-    store.onChange(() => this.#update());
+    store.onChange(() => this.#schedule());
     this.#update();
   }
   set map(map: TransitMap) {
     this.#map = map;
-    map.addEventListener('mapstate', () => this.#update());
+    map.addEventListener('mapstate', () => this.#schedule());
     this.#update();
   }
 

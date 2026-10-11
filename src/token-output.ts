@@ -10,7 +10,7 @@ export class TokenOutput extends HTMLElement {
   #unsubscribe: (() => void) | null = null;
   #announce: Announce = () => undefined;
   #format: OutputFormat = 'css';
-  #changed: string | null = null;
+  #changed: ReadonlySet<string> = new Set();
   #copiedTimer = 0;
   readonly #tabs: Readonly<Record<OutputFormat, HTMLButtonElement>>;
   readonly #tablist = h('div', { role: 'tablist', 'aria-label': 'Output format', class: 'out-tabs' });
@@ -27,7 +27,7 @@ export class TokenOutput extends HTMLElement {
     this.#unsubscribe?.();
     this.#store = store;
     this.#unsubscribe = store.onChange((c) => {
-      this.#changed = c.name;
+      this.#changed = new Set(c.targets);
       this.#schedule();
     });
     this.#schedule();
@@ -98,6 +98,6 @@ export class TokenOutput extends HTMLElement {
     if (!st) return;
     const lines = this.#format === 'css' ? toCss(st) : toDtcg(st);
     this.#pre.replaceChildren(...lines.map((line) =>
-      h('span', { class: `out-line${line.token !== null && line.token === this.#changed ? ' is-changed' : ''}` }, line.text, '\n')));
+      h('span', { class: `out-line${line.token !== null && this.#changed.has(line.token) ? ' is-changed' : ''}` }, line.text, '\n')));
   }
 }

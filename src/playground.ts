@@ -6,7 +6,7 @@ import { ColorEditor } from './color-editor.js';
 import { ColorPanel } from './color-panel.js';
 import { COMMAND_WORDS, runCommand } from './commands.js';
 import { ContrastPanel } from './contrast-panel.js';
-import { h, type Announce } from './dom.js';
+import { h, rafBatch, type Announce } from './dom.js';
 import { FloatingDialog } from './floating-dialog.js';
 import { MapLegend } from './map-legend.js';
 import { MapReadout } from './map-readout.js';
@@ -99,8 +99,9 @@ export function mountPlayground(cfg: PlaygroundConfig): Playground {
     redoBtn.setAttribute('aria-disabled', String(!store.canRedo));
   };
   sync();
-  store.onChange(sync);
-  themes.onChange(sync);
+  const scheduleSync = rafBatch(sync);
+  store.onChange(scheduleSync);
+  themes.onChange(scheduleSync);
 
   const map = need('transit-map', TransitMap);
   const rack = need('token-rack', TokenRack);
@@ -142,10 +143,13 @@ export function mountPlayground(cfg: PlaygroundConfig): Playground {
     introBtn.setAttribute('aria-expanded', String(open));
     introBtn.textContent = open ? 'Hide intro' : 'How it works';
     document.querySelector('.masthead')?.classList.toggle('is-compact', !open);
-    saveFlag(introKey, open);
   };
   setIntro(storageFlag(introKey, window.innerHeight >= 620));
-  introBtn.addEventListener('click', () => setIntro(Boolean(intro.hidden)));
+  // Only the user's own choice is remembered, not the screen-size default or the sheet's auto-collapse.
+  introBtn.addEventListener('click', () => {
+    setIntro(Boolean(intro.hidden));
+    saveFlag(introKey, !intro.hidden);
+  });
   dock.addEventListener('dockopen', () => {
     if (dock.layout === 'sheet' && !intro.hidden) setIntro(false);
   });
@@ -167,10 +171,11 @@ export function mountPlayground(cfg: PlaygroundConfig): Playground {
     list.replaceChildren(...words.map((value) => h('option', { value })));
   };
   fillList();
+  const scheduleList = rafBatch(fillList);
   let running = false;
   store.onChange(() => {
     if (!running) status.textContent = '';
-    fillList();
+    scheduleList();
   });
   let returnTo: HTMLElement | null = null;
   const targets = {
@@ -206,7 +211,9 @@ export function mountPlayground(cfg: PlaygroundConfig): Playground {
 
   document.addEventListener('keydown', (e) => {
     if (e.defaultPrevented || e.altKey) return;
-    const typing = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]');
+    // Sliders and other non-text inputs keep the global keys, so undo still works after a drag.
+    const typing = e.target instanceof Element
+      && e.target.closest('input:not([type="range"], [type="checkbox"], [type="radio"], [type="button"]), textarea, select, [contenteditable]');
     const mod = e.ctrlKey || e.metaKey;
     if (mod && !typing && (e.key === 'z' || e.key === 'Z' || e.key === 'y')) {
       e.preventDefault();
