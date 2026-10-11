@@ -1,0 +1,14 @@
+# Netlify build. Pages ship without <html>/<head>/<body> (the Artifact host adds them),
+# so the deploy uses scripts/preview.mjs to wrap them the same way. Output: preview/.
+[build]
+  command = "npm run build && node scripts/preview.mjs"
+  publish = "preview"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# No index page: send the bare domain to direction A.
+[[redirects]]
+  from = "/"
+  to = "/schematic-paper.html"
+  status = 302
