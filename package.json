@@ -1,0 +1,16 @@
+{
+  "name": "token-map",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Keyboard-first design-token playground built on a 1970s transit map, in exactly three colors.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -p . --watch",
+    "typecheck": "tsc -p . --noEmit",
+    "preview": "tsc -p . && node scripts/preview.mjs && python3 -m http.server 8765 --directory preview"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}
